@@ -1,6 +1,15 @@
+#include "basic/basic.h"
+
+#include "lcd/render.h"
+#include "lcd/print.h"
+#include "lcd/display.h"
+
+#include "usetable.h"
+
 #define SCREEN_WIDTH  96
 #define SCREEN_HEIGHT 67
-#define SCREEN_SIZE ( SCREEN_WIDTH * SCREEN_HEIGHT )
+#define SCREEN_SIZE 10
+//( SCREEN_WIDTH * SCREEN_HEIGHT )
 
 #define INITIAL_LENGTH 4
 
@@ -12,7 +21,7 @@ typedef struct {
 typedef struct {
 	int8_t start;
 	int8_t length;
-	point[SCREEN_SIZE] data; // TODO: optimize to a power of 2
+	point data[SCREEN_SIZE]; // TODO: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
 vringpbuf snake;
