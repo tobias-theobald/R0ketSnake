@@ -1,2 +1,19 @@
 #!/bin/bash
-echo "Here will be the build script"
+
+# Check if the r0ket folder variable is set
+if [ ! -n "$R0KET" ]; then
+  R0KET="$HOME/r0ket"
+fi
+
+DIRECTORY=$PWD
+
+echo "Copying snake.c to $R0KET/firmware/l0dable"
+cp snake.c "$R0KET/firmware/l0dable"
+
+cd "$R0KET/firmware/l0dable"
+
+echo "Building..."
+make snake.c0d && mv snake.c0d $DIRECTORY
+cd $DIRECTORY
+
+echo "Finished."
