@@ -8,16 +8,11 @@
 
 #define SCREEN_WIDTH  96
 #define SCREEN_HEIGHT 67
-<<<<<<< HEAD
 #define SCREEN_SIZE ( SCREEN_WIDTH * SCREEN_HEIGHT )
 #define BLOCK_SIZE 4
 #define GAME_WIDTH ( SCREEN_WIDTH / BLOCK_SIZE )
 #define GAME_HEIGHT ( SCREEN_HEIGHT / BLOCK_SIZE )
-#define GAME_SIZE ( GAME_WIDTH * GAME_HEIGHT ) 
-=======
-#define SCREEN_SIZE 10
-//( SCREEN_WIDTH * SCREEN_HEIGHT )
->>>>>>> d69be028d32c336b6682463599adb30cad2932db
+#define GAME_SIZE ( GAME_WIDTH * GAME_HEIGHT )
 
 #define INITIAL_LENGTH 4
 
@@ -30,11 +25,7 @@ typedef struct {
 	point startpoint;
 	size_t starthn; // index of the half nibble (2 bits) where we start
 	int8_t length;
-<<<<<<< HEAD
 	int8_t[GAME_SIZE / 4] data; // TODO: optimize to a power of 2
-=======
-	point data[SCREEN_SIZE]; // TODO: optimize to a power of 2
->>>>>>> d69be028d32c336b6682463599adb30cad2932db
 } vringpbuf; // variable (but limited) size ring buffer for points
 
 int8_t shiftBuf (vringpbuf *buf, int8_t nextDir);
