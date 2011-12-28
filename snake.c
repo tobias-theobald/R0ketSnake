@@ -43,6 +43,13 @@ void shiftPoint (point *p, int8_t direction);
 void initSnake ();
 size_t getLength (vringpbuf* who);
 
+uint16_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+uint16_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
+void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
+void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops); // to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
+void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops); // to be used by host when game display must be sent (display must be uint8_t[52])
+
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
 void setGamePixel (int8_t x, int8_t y, bool color);
