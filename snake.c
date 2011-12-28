@@ -3,6 +3,7 @@
 #include "lcd/render.h"
 #include "lcd/print.h"
 #include "lcd/display.h"
+#include "funk/nrf24l01p.h"
 
 #include "usetable.h"
 
@@ -48,7 +49,7 @@ uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout
 uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
-void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops); // to be used by host when game display must be sent (display must be uint8_t[52])
+void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout); // to be used by host when game display must be sent (display must be uint8_t[52])
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
 
 // drawing functions in game coordinates
@@ -176,12 +177,13 @@ void multiPlayer(void) {
 // returns 0 if timeout (no host found), gameID (!= 0) else
 uint8_t initRadioAndLookForGames(int timeout) {
 
+	uint8_t macListen[5] = {0x04, 0x08, 0x02, 0x06, 0x00};
     	struct NRF_CFG configListen;
 	configListen.nrmacs=1;
 	configListen.maclen[0] = 16;
 	configListen.channel = 81;
-	configListen.mac0 = "\x04\x08\x02\x06\x00";
-	configListen.txmac = "\x04\x08\x02\x06\x00";
+	memcpy(configListen.mac0, macListen, 5);
+	memcpy(configListen.txmac, macListen, 5);
 	nrf_config_set(&configListen);
 
 	// Broadcast Message format: 1 Byte
@@ -189,18 +191,18 @@ uint8_t initRadioAndLookForGames(int timeout) {
 	// 00-07: gameID
 	uint8_t gameID;
 
-	if (nrf_rcv_pkt_time(timeout, 1, gameID) != 1) // wrong package length or nothing received
+	if (nrf_rcv_pkt_time(timeout, 1, &gameID) != 1) // wrong package length or nothing received
 		return 0;
 		
 	// At this point, we know there is an open game. Let's join it.
 	
-	uint8_t mac[7] = {0x04, 0x08, 0x02, 0x06, gameID};
+	uint8_t macIngame[5] = {0x04, 0x08, 0x02, 0x06, gameID};
     	struct NRF_CFG configIngame;
 	configIngame.nrmacs=1;
 	configIngame.maclen[0] = 16;
 	configIngame.channel = 81;
-	configIngame.mac0 = mac;
-	configIngame.txmac = mac;
+	memcpy(configIngame.mac0, macIngame, 5);
+	memcpy(configIngame.txmac, macIngame, 5);
 	nrf_config_set(&configIngame);
 	
 	uint8_t init = BTN_NONE;
@@ -222,25 +224,26 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 		while (!gameID)
 			gameID = getRandom();
 
-		struct NRF_CFG configListen;
+		uint8_t macListen[5] = {0x04, 0x08, 0x02, 0x06, 0x00};
+    		struct NRF_CFG configListen;
 		configListen.nrmacs=1;
 		configListen.maclen[0] = 16;
 		configListen.channel = 81;
-		configListen.mac0 = "\x04\x08\x02\x06\x00";
-		configListen.txmac = "\x04\x08\x02\x06\x00";
+		memcpy(configListen.mac0, macListen, 5);
+		memcpy(configListen.txmac, macListen, 5);
 		nrf_config_set(&configListen);
 		nrf_snd_pkt_crc(1, &gameID);
 		
-		uint8_t mac[5] = {0x04, 0x08, 0x02, 0x06, gameID};
+		uint8_t macIngame[5] = {0x04, 0x08, 0x02, 0x06, gameID};
 	    	struct NRF_CFG configIngame;
 		configIngame.nrmacs=1;
 		configIngame.maclen[0] = 16;
 		configIngame.channel = 81;
-		configIngame.mac0 = mac;
-		configIngame.txmac = mac;
+		memcpy(configIngame.mac0, macIngame, 5);
+		memcpy(configIngame.txmac, macIngame, 5);
 		nrf_config_set(&configIngame);
 	
-		if (nrf_rcv_pkt_time(32, 1, buf) == 1 && buf = 0)
+		if (nrf_rcv_pkt_time(32, 1, &buf) == 1 && buf == 0)
 			return gameID;
 
 		gameID = 0;
@@ -258,20 +261,19 @@ uint8_t receiveKeyPressed(int timeout) {
 
 // to be used by client in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout) {
-	nrf_snd_pkt_crc(1, &init);
+	nrf_snd_pkt_crc(1, &keyPressed);
 	delayms(timeout);
 }
 
 // to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout) {
 	uint8_t buf[54];
-	if (nrf_rcv_pkt_time(timeout, 1, &buf) != 54)
+	if (nrf_rcv_pkt_time(timeout, 54, buf) != 54)
 		return;
 	delayms(timeout);
 	memcpy(display, buf, 52);
 	*baconx = buf[52];
 	*bacony = buf[53];
-	return buf;
 }
 
 // to be used by host when game display must be sent (display must be uint8_t[52])
