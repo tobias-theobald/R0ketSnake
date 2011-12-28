@@ -40,7 +40,8 @@ void shiftBuf (vringpbuf *buf, int8_t nextDir);
 void growBuf (vringpbuf *buf, int8_t nextDir);
 void shiftPoint (point *p, int8_t direction);
 
-void initSnake ();
+void initSnake (void);
+void initSnake2 (void);
 size_t getLength (vringpbuf* who);
 
 uint16_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
@@ -59,6 +60,7 @@ bool getGamePixel (int8_t x, int8_t y);
 void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color);
 
 vringpbuf snake;
+vringpbuf snake2;
 point bacon;
 
 #define DIRECTION_RIGHT 0
@@ -66,6 +68,7 @@ point bacon;
 #define DIRECTION_LEFT 2
 #define DIRECTION_DOWN 3
 int8_t direction;
+int8_t direction2;
 
 int8_t i,j ;
 
@@ -270,9 +273,9 @@ void growBuf (vringpbuf *buf, int8_t nextDir) {
 }
 
 void initSnake (void) {
-	snake.startpoint.x = 0;
+	snake.startpoint.x = GAME_WIDTH-4;
 	snake.startpoint.y = 0;
-	snake.endpoint.x = 3;
+	snake.endpoint.x = GAME_WIDTH-1;
 	snake.endpoint.y = 0;
 	snake.starthn = 0;
 	snake.endhn = 2;
@@ -281,6 +284,19 @@ void initSnake (void) {
 	direction = DIRECTION_RIGHT;
 	for (i=0; i<=2; i++) {
 		setHalfNibble(snake.data, i, DIRECTION_RIGHT);
+	}
+}
+
+void initSnake2 (void) {
+	snake2.startpoint.x = 3;
+	snake2.startpoint.y = GAME_HEIGHT-1;
+	snake2.endpoint.x = 0;
+	snake2.endpoint.y = GAME_HEIGHT-1;
+	snake2.starthn = 0;
+	snake2.endhn = 2;
+	direction = DIRECTION_LEFT;
+	for (i=0; i<=2; i++) {
+		setHalfNibble(snake.data, i, DIRECTION_LEFT);
 	}
 }
 
