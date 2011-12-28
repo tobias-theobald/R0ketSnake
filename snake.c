@@ -47,20 +47,10 @@ size_t getLength (vringpbuf* who);
 
 uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
-<<<<<<< HEAD
-uint8_t receiveKeyPressed(int timeout, uint8_t gameID); // to be used by host in wait loop
-void sendKeyPressed(uint8_t keyPressed, int timeout, uint8_t gameID); // to be used by client in wait loop
-//TODO: make sendKeyPressed return the last key pressed while waiting
-void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops, uint8_t gameID); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
-//TODO: make receiveMove return the last key pressed while waiting
-void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops, uint8_t gameID); // to be used by host when game display must be sent (display must be uint8_t[52])
-//TODO: make sendMove return the last key pressed while waiting
-=======
 uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout); // to be used by host when game display must be sent (display must be uint8_t[52])
->>>>>>> 0da73a078eb28495f4d6c1043bcfd4b5ecd8ab27
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
 
 // drawing functions in game coordinates
