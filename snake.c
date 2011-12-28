@@ -199,9 +199,9 @@ void initSnake (void) {
 
 void drawPixelBlock (int8_t x, int8_t y, bool* img) {
 	int c = 0;
-	for (i=x*BLOCK_SIZE; i<(x+1)*BLOCK_SIZE; i++) {
-		for (j=y*BLOCK_SIZE; j<(y+1)*BLOCK_SIZE; j++) {
-			lcdSetPixel (i,j,img[c++]);
+	for (i=y*BLOCK_SIZE; i<(y+1)*BLOCK_SIZE; i++) {
+		for (j=x*BLOCK_SIZE; j<(x+1)*BLOCK_SIZE; j++) {
+			lcdSetPixel (j,i,img[c++]);
 		}
 	}
 }
