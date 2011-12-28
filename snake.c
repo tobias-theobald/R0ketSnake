@@ -35,6 +35,7 @@ int8_t getHalfNibble (int8_t *data, int index);
 void setHalfNibble (int8_t *data, int index, int8_t value);
 void shiftBuf (vringpbuf *buf, int8_t nextDir);
 void growBuf (vringpbuf *buf, int8_t nextDir);
+int getLength (vringpbuf* who);
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -112,6 +113,15 @@ void ram (void) {
 				key = getInputRaw();
 		}
 
+	}
+}
+
+size_t getLength (vringpbuf* who) {
+	size_t diff = who->endhn - who->starthn; 
+	if (diff>0) {
+		return diff + 1;
+	} else {
+		return diff + (NIBBLECOUNT + 1);
 	}
 }
 
