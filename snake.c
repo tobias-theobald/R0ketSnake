@@ -1,5 +1,5 @@
 #include "basic/basic.h"
-
+#include "basic/random.h"
 #include "lcd/render.h"
 #include "lcd/print.h"
 #include "lcd/display.h"
@@ -16,7 +16,6 @@
 #define NIBBLECOUNT ( GAME_SIZE / 4 )
 
 #define INITIAL_LENGTH 4
-
 #define TIME_PER_MOVE 500
 
 typedef struct {
@@ -39,6 +38,8 @@ void growBuf (vringpbuf *buf, int8_t nextDir);
 
 
 vringpbuf snake;
+point bacon;
+
 #define DIRECTION_RIGHT 0
 #define DIRECTION_UP 1
 #define DIRECTION_LEFT 2
@@ -50,9 +51,9 @@ int8_t i;
 void initSnake ();
 
 void ram (void) {
+	int key = getInputRaw();
 	lcdClear();
 	initSnake ();
-	int key = getInputRaw();
 	while (1) {	
 		switch (key) {
 			case BTN_ENTER:
@@ -77,9 +78,26 @@ void ram (void) {
 				//Default: No keystroke received. Assuming last keystroke.
 				
 		}
-		lcdSetPixel(snake.startpoint.x, snake.startpoint.y, 0);
-		shiftBuf (&snake, direction);
+		point newendpoint = snake.endpoint;
+		shiftPoint (&newendpoint, direction);
+		bool resetBacon = false;
+		if (newendpoint.x == bacon.x && newendpoint.y == bacon.y) {
+			growBuf (&snake, direction);
+			resetBacon = true;
+		} else {
+			lcdSetPixel(snake.startpoint.x, snake.startpoint.y, 0);
+			shiftBuf (&snake, direction);
+		}
 		lcdSetPixel(snake.endpoint.x, snake.endpoint.y, 1);
+
+		while (resetBacon) {
+			bacon.x = getRandom() % GAME_WIDTH;
+			bacon.y = getRandom() % GAME_HEIGHT;
+			if (!getGamePixel(bacon.x, bacon.y))
+				resetBacon = false;
+		}
+		
+		drawFood (bacon.x, bacon.y);
 		lcdRefresh();
 		key = BTN_NONE;
 		
@@ -140,6 +158,8 @@ void initSnake (void) {
 	snake.endpoint.y = 0;
 	snake.starthn = 0;
 	snake.endhn = 2;
+	bacon.x = getRandom() % GAME_WIDTH;
+	bacon.y = getRandom() % GAME_HEIGHT;
 	direction = DIRECTION_RIGHT;
 	for (i=0; i<=2; i++) {
 		setHalfNibble(snake.data, i, DIRECTION_RIGHT);
