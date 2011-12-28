@@ -38,7 +38,7 @@ void growBuf (vringpbuf *buf, int8_t nextDir);
 void shiftPoint (point *p, int8_t direction);
 
 void initSnake ();
-int getLength (vringpbuf* who);
+size_t getLength (vringpbuf* who);
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -123,7 +123,7 @@ void ram (void) {
 	lcdNl();
 	lcdPrintln("Game Over");
 	lcdPrintln("Your score:");
-	lcdPrintInt(getLength());
+	lcdPrintInt(getLength(&snake));
 	lcdRefresh();	
 	delayms(500);
 	while(getInputRaw() == BTN_NONE)
