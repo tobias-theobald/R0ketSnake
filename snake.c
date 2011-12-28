@@ -17,6 +17,8 @@
 
 #define INITIAL_LENGTH 4
 
+#define TIME_PER_MOVE 500
+
 typedef struct {
 	int8_t x;
 	int8_t y;
@@ -47,15 +49,15 @@ int8_t i;
 
 void initSnake ();
 
-int game (void) {
+void ram (void) {
 	lcdClear();
 	initSnake ();
-	while (1) {
-		int key = getInputRaw();
+	int key = getInputRaw();
+	while (1) {	
 		switch (key) {
 			case BTN_ENTER:
 				// exit
-				return 0;
+				return;
 			case BTN_RIGHT:
 				if (direction != DIRECTION_LEFT)
 					direction = DIRECTION_RIGHT;
@@ -72,13 +74,21 @@ int game (void) {
 				if (direction != DIRECTION_UP)
 					direction = DIRECTION_DOWN;
 			break;
-			default:
-				// strange things happen!
-				return 1;
+				//Default: No keystroke received. Assuming last keystroke.
+				
 		}
 		lcdSetPixel(snake.startpoint.x, snake.startpoint.y, 0);
 		shiftBuf (&snake, direction);
 		lcdSetPixel(snake.endpoint.x, snake.endpoint.y, 1);
+		lcdRefresh();
+		key = BTN_NONE;
+		
+		for (i=0; i < ( TIME_PER_MOVE / 50 ); ++i) {
+			delayms(50);
+			if (key == BTN_NONE)
+				key = getInputRaw();
+		}
+
 	}
 }
 
