@@ -38,6 +38,7 @@ void growBuf (vringpbuf *buf, int8_t nextDir);
 void shiftPoint (point *p, int8_t direction);
 
 void initSnake ();
+int getLength (vringpbuf* who);
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -128,6 +129,15 @@ void ram (void) {
 	while(getInputRaw() == BTN_NONE)
 		delayms(25);
 
+}
+
+size_t getLength (vringpbuf* who) {
+	size_t diff = who->endhn - who->starthn; 
+	if (diff>0) {
+		return diff + 1;
+	} else {
+		return diff + (NIBBLECOUNT + 1);
+	}
 }
 
 int8_t getHalfNibble (int8_t *data, int index) {
