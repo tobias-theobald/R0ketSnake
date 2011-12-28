@@ -19,8 +19,8 @@
 #define TIME_PER_MOVE 300
 
 typedef struct {
-	int8_t x;
-	int8_t y;
+	uint8_t x;
+	uint8_t y;
 } point;
 
 typedef struct {
@@ -28,7 +28,7 @@ typedef struct {
 	point endpoint;
 	size_t starthn; // index of the half nibble (2 bits) where we start
 	size_t endhn;
-	int8_t data[NIBBLECOUNT]; // TODO: optimize to a power of 2
+	int8_t data[NIBBLECOUNT]; // not todo because fast enough: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
 void singlePlayer (void);
@@ -48,8 +48,11 @@ uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host
 uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t receiveKeyPressed(int timeout, uint8_t gameID); // to be used by host in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout, uint8_t gameID); // to be used by client in wait loop
+//TODO: make sendKeyPressed return the last key pressed while waiting
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops, uint8_t gameID); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
+//TODO: make receiveMove return the last key pressed while waiting
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops, uint8_t gameID); // to be used by host when game display must be sent (display must be uint8_t[52])
+//TODO: make sendMove return the last key pressed while waiting
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
 
 // drawing functions in game coordinates
@@ -75,11 +78,13 @@ int8_t i,j ;
 void ram (void) {
 	int key = BTN_NONE;
 	while (key != BTN_ENTER) {
-		if (key == BTN_UP)
+		if (key == BTN_UP) {
 			singlePlayer();
-		if (key == BTN_DOWN)
+			delayms(100); // agains double-eval of a button
+		} else if (key == BTN_DOWN) {
 			multiPlayer();
-		
+			delayms(100);
+		}
 		key = BTN_NONE;
 		lcdClear();
 		lcdPrintln("R0ketSnake");
@@ -173,7 +178,69 @@ void singlePlayer (void) {
 }
 
 void multiPlayer(void) {
+	lcdClear();
+	lcdPrintln(" looking for ");
+	lcdPrintln("  existing   ");
+	lcdPrintln("   games...  ");
+	if (initRadioAndLookForGames(1000)) { // game found
+		// act as controller and screen
+		client();
+	} else { // no game found
+		// PRINT: awaiting connection
+		if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
+			//game found
+			//TODO: start game as host
+		} else {
+			lcdClear();
+			lcdPrintln("nobody joined");
+		}
+	}
+}
 
+bool getIthBit (uint8_t byte, size_t i) {
+	return (byte>>i)&1;
+}
+
+void setIthBit (uint8_t *byte, size_t i, bool value) {
+	if (value)
+		*byte = *byte | 1<<i;
+	else
+		*byte = *byte & ~(1<<i);
+}
+
+inline size_t twoD2OneD (size_t x, size_t y) {
+	return y*GAME_WIDTH+x;
+}
+
+bool getPixelOnDsp (uint8_t *dsp, uint8_t x, uint8_t y) {
+	int index = twoD2OneD(x,y);
+	uint8_t theByte = dsp[index/8];
+	return getIthBit (theByte, index%8);
+}
+
+void setPixelOnDsp (uint8_t *dsp, uint8_t x, uint8_t y, bool value) {
+	int index = twoD2OneD(x,y);
+	setIthBit (&(dsp[index/8]), index%8, value);
+}
+
+void paintDisplay (uint8_t *dsp) {
+	for (i=0; i<GAME_HEIGHT; i++) {
+		for (j=0; j<GAME_WIDTH; j++) {
+			setGamePixel (j, i, getPixelOnDsp(dsp,j,i));
+		}
+	}
+}
+
+void client (void) {
+	uint8_t dsp [GAME_SIZE/8];
+	uint8_t key;
+	while(1) {
+		receiveMove(dsp, &(bacon.x), &(bacon.y), TIME_PER_MOVE/16);
+		paintDisplay (dsp);
+		drawFood (bacon.x, bacon.y);
+		key = getInputRaw();
+		sendKeyPressed (key, TIME_PER_MOVE/16);
+	}
 }
 
 // returns 0 if timeout (no host found), gameID (bit 0-5) else
