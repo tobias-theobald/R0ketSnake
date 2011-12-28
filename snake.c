@@ -24,6 +24,7 @@ typedef struct {
 
 typedef struct {
 	point startpoint;
+	point endpoint;
 	size_t starthn; // index of the half nibble (2 bits) where we start
 	int8_t endhn;
 	int8_t[NIBBLECOUNT] data; // TODO: optimize to a power of 2
@@ -75,6 +76,9 @@ void game (void) {
 				// strange things happen!
 				return 1;
 		}
+		lcdSetPixel(snake.startpoint.x, snake.startpoint.y, 0);
+		shiftBuf (snake, direction);
+		lcdSetPixel(snake.endpoint.x, snake.endpoint.y, 1);
 	}
 }
 
@@ -115,11 +119,14 @@ void shiftBuf (vringpbuf *buf, int8_t nextDir) {
 void growBuf (vringpbuf *buf, int8_t nextDir) {
 	buf->endhn = (buf->endhn + 1) % GAME_SIZE;
 	setHalfNibble(buf->data, buf->endhn, nextDir);
+	shiftPoint (&(buf->endpoint), nextDir);
 }
 
 void initSnake (void) {
 	snake.startpoint.x = 0;
 	snake.startpoint.y = 0;
+	snake.endpoint.x = 3;
+	snake.endpoint.y = 0;
 	snake.starthn = 0;
 	snake.endhn = 2;
 	for (i=0; i<=2; i++) {
