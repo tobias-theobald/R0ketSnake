@@ -185,15 +185,21 @@ void multiPlayer(void) {
 		// act as controller and screen
 		client();
 	} else { // no game found
-		// PRINT: awaiting connection
+		lcdClear();
+		lcdPrintln("  awaiting   ");
+		lcdPrintln(" connection. ");
 		if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
 			//game found
-			//TODO: start game as host
+			host();
 		} else {
 			lcdClear();
 			lcdPrintln("nobody joined");
 		}
 	}
+}
+
+void host (void) {
+	
 }
 
 bool getIthBit (uint8_t byte, size_t i) {
