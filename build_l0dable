@@ -7,13 +7,13 @@ fi
 
 DIRECTORY=$PWD
 
-echo "Copying snake.c to $R0KET/firmware/applications"
-cp snake.c "$R0KET/firmware/applications"
+echo "Copying snake.c to $R0KET/firmware/l0dable"
+cp snake.c "$R0KET/firmware/l0dable"
 
-cd "$R0KET/firmware"
+cd "$R0KET/firmware/l0dable"
 
 echo "Building..."
-make flash APP=snake
+make snake.c0d && mv snake.c0d $DIRECTORY
 cd $DIRECTORY
 
 echo "Finished."

@@ -5,7 +5,7 @@
 #include "lcd/display.h"
 #include "funk/nrf24l01p.h"
 
-#include "usetable.h"
+#include "l0dable/usetable.h"
 
 #define SCREEN_WIDTH  96
 #define SCREEN_HEIGHT 68
@@ -45,6 +45,7 @@ void initSnake (void);
 void initSnake2 (void);
 size_t getLength (vringpbuf* who);
 void client (void);
+void host (void);
 
 uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
@@ -53,6 +54,7 @@ void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout); // to be used by host when game display must be sent (display must be uint8_t[52])
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
+void memcopy(uint8_t * s1, const uint8_t * s2, size_t n);
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -96,6 +98,10 @@ void ram (void) {
 		while((key = getInputRaw()) == BTN_NONE)
 			delayms(25);
 	}
+}
+
+void main_snake (void) {
+	ram();
 }
 
 void singlePlayer (void) {
@@ -256,8 +262,8 @@ uint8_t initRadioAndLookForGames(int timeout) {
 	configListen.nrmacs=1;
 	configListen.maclen[0] = 16;
 	configListen.channel = 81;
-	memcpy(configListen.mac0, macListen, 5);
-	memcpy(configListen.txmac, macListen, 5);
+	memcopy(configListen.mac0, macListen, 5);
+	memcopy(configListen.txmac, macListen, 5);
 	nrf_config_set(&configListen);
 
 	// Broadcast Message format: 1 Byte
@@ -275,8 +281,8 @@ uint8_t initRadioAndLookForGames(int timeout) {
 	configIngame.nrmacs=1;
 	configIngame.maclen[0] = 16;
 	configIngame.channel = 81;
-	memcpy(configIngame.mac0, macIngame, 5);
-	memcpy(configIngame.txmac, macIngame, 5);
+	memcopy(configIngame.mac0, macIngame, 5);
+	memcopy(configIngame.txmac, macIngame, 5);
 	nrf_config_set(&configIngame);
 	
 	uint8_t init = BTN_NONE;
@@ -303,8 +309,8 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 		configListen.nrmacs=1;
 		configListen.maclen[0] = 16;
 		configListen.channel = 81;
-		memcpy(configListen.mac0, macListen, 5);
-		memcpy(configListen.txmac, macListen, 5);
+		memcopy(configListen.mac0, macListen, 5);
+		memcopy(configListen.txmac, macListen, 5);
 		nrf_config_set(&configListen);
 		nrf_snd_pkt_crc(1, &gameID);
 		
@@ -313,8 +319,8 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 		configIngame.nrmacs=1;
 		configIngame.maclen[0] = 16;
 		configIngame.channel = 81;
-		memcpy(configIngame.mac0, macIngame, 5);
-		memcpy(configIngame.txmac, macIngame, 5);
+		memcopy(configIngame.mac0, macIngame, 5);
+		memcopy(configIngame.txmac, macIngame, 5);
 		nrf_config_set(&configIngame);
 	
 		if (nrf_rcv_pkt_time(32, 1, &buf) == 1 && buf == 0)
@@ -345,7 +351,7 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 	if (nrf_rcv_pkt_time(timeout, 53, buf) != 53)
 		return;
 	delayms(timeout);
-	memcpy(display, buf, 51);
+	memcopy(display, buf, 51);
 	*baconx = buf[51];
 	*bacony = buf[52];
 }
@@ -353,7 +359,7 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 // to be used by host when game display must be sent (display must be uint8_t[52])
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout) {
 	uint8_t buf[53];
-	memcpy(buf, display, 51);
+	memcopy(buf, display, 51);
 	buf[51] = baconx;
 	buf[52] = bacony;
 	nrf_snd_pkt_crc(53, buf);
@@ -363,6 +369,11 @@ void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout) {
 
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len) {
 	return (mask << bit) >> (8-len);
+}
+
+void memcopy(uint8_t * s1, const uint8_t * s2, size_t n) {
+	for (i = 0; i < n; ++i)
+		*(s1+i) = *(s2+i);
 }
 
 void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color) {
