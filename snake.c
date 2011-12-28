@@ -57,7 +57,7 @@ int8_t direction;
 int8_t i,j ;
 
 void ram (void) {
-	int key = getInputRaw();
+	int key = getInputRaw(), button;
 	lcdClear();
 	initSnake ();
 	while (1) {	
@@ -94,6 +94,8 @@ void ram (void) {
 			setGamePixel(snake.startpoint.x, snake.startpoint.y, 0);
 			shiftBuf (&snake, direction);
 		}
+		if (getGamePixel(snake.endpoint.x, snake.endpoint.y))
+			break;
 		setGamePixel(snake.endpoint.x, snake.endpoint.y, 1);
 
 		while (resetBacon) {
@@ -109,11 +111,23 @@ void ram (void) {
 		
 		for (i=0; i < ( TIME_PER_MOVE / 50 ); ++i) {
 			delayms(50);
-			if (key == BTN_NONE)
-				key = getInputRaw();
+			if ((button = getInputRaw()) != BTN_NONE)
+				key = button;
 		}
 
 	}
+	
+	// Game ended, show results
+	lcdClear();
+	lcdNl();
+	lcdPrintln("Game Over");
+	lcdPrintln("Your score:");
+	lcdPrintInt(getLength());
+	lcdRefresh();	
+	delayms(500);
+	while(getInputRaw() == BTN_NONE)
+		delayms(25);
+
 }
 
 int8_t getHalfNibble (int8_t *data, int index) {
