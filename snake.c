@@ -36,6 +36,10 @@ void setHalfNibble (int8_t *data, int index, int8_t value);
 void shiftBuf (vringpbuf *buf, int8_t nextDir);
 void growBuf (vringpbuf *buf, int8_t nextDir);
 
+// drawing functions in game coordinates
+void drawPixelBlock (int8_t x, int8_t y, bool* img);
+void setGamePixel (int8_t x, int8_t y, bool color);
+void drawFood (int8_t x, int8_t y);
 
 vringpbuf snake;
 point bacon;
@@ -46,7 +50,7 @@ point bacon;
 #define DIRECTION_DOWN 3
 int8_t direction;
 
-int8_t i;
+int8_t i,j ;
 
 void initSnake ();
 
@@ -164,5 +168,38 @@ void initSnake (void) {
 	for (i=0; i<=2; i++) {
 		setHalfNibble(snake.data, i, DIRECTION_RIGHT);
 	}
+}
+
+void drawPixelBlock (int8_t x, int8_t y, bool* img) {
+	int c = 0;
+	for (i=x*BLOCK_SIZE; i<(x+1)*BLOCK_SIZE; i++) {
+		for (j=y*BLOCK_SIZE; j<(y+1)*BLOCK_SIZE; j++) {
+			lcdSetPixel (i,j,img[c++]);
+		}
+	}
+}
+
+void setGamePixel (int8_t x, int8_t y, bool color) {
+	//TODO: optimize for BLOCK_SIZE == 4
+	static bool fullBlock[BLOCK_SIZE*BLOCK_SIZE];
+	if (fullBlock[0]==0) // TODO: outsource this init
+		for (i=0; i<BLOCK_SIZE*BLOCK_SIZE; i++)
+			fullBlock[i] = 1;
+	drawPixelBlock (x,y,fullBlock);
+}
+
+void drawFood (int8_t x, int8_t y) {
+#if BLOCK_SIZE == 4
+	static bool food [] = {
+		0, 1, 1, 0,
+		1, 0, 0, 1,
+		1, 0, 0, 1,
+		0, 1, 1, 0
+	};
+	drawPixelBlock (x,y,food);
+#else
+#warning food will be drawn as full game pixel because food art is undefined for such BLOCK_SIZE
+	setGamePixel (x,y,1);
+#endif
 }
 
