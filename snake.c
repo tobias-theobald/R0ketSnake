@@ -47,7 +47,7 @@ int8_t i;
 
 void initSnake ();
 
-void game (void) {
+int game (void) {
 	lcdClear();
 	initSnake ();
 	while (1) {
@@ -77,7 +77,7 @@ void game (void) {
 				return 1;
 		}
 		lcdSetPixel(snake.startpoint.x, snake.startpoint.y, 0);
-		shiftBuf (snake, direction);
+		shiftBuf (&snake, direction);
 		lcdSetPixel(snake.endpoint.x, snake.endpoint.y, 1);
 	}
 }
