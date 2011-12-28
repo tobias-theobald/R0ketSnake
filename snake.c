@@ -182,12 +182,11 @@ void drawPixelBlock (int8_t x, int8_t y, bool* img) {
 }
 
 void setGamePixel (int8_t x, int8_t y, bool color) {
-	//TODO: optimize for BLOCK_SIZE == 4
-	static bool fullBlock[BLOCK_SIZE*BLOCK_SIZE];
-	if (fullBlock[0]==0) // TODO: outsource this init
-		for (i=0; i<BLOCK_SIZE*BLOCK_SIZE; i++)
-			fullBlock[i] = 1;
-	drawPixelBlock (x,y,fullBlock);
+	for (i=x*BLOCK_SIZE; i<(x+1)*BLOCK_SIZE; i++) {
+		for (j=y*BLOCK_SIZE; j<(y+1)*BLOCK_SIZE; j++) {
+			lcdSetPixel (i,j,color);
+		}
+	}
 }
 
 bool getGamePixel (int8_t x, int8_t y) {
