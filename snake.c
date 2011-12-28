@@ -49,6 +49,7 @@ uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops); // to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops); // to be used by host when game display must be sent (display must be uint8_t[52])
+uint8_t getBits(uint8_t mask, uint8_t bit, len); // internal
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -171,6 +172,46 @@ void singlePlayer (void) {
 void multiPlayer(void) {
 
 }
+
+// returns 0 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+uint16_t initRadioAndLookForGames(int timeout) {
+
+    	struct NRF_CFG config;
+	config.nrmacs=1;
+	config.maclen[0] = 16;
+	config.channel = 81;
+	memcpy(config.mac0, "\x04\x08\x02\x06\x00", 5);
+	nrf_config_set(&config);
+
+	uint8_t buf[2];
+	uint8_t gameID = 0;
+	
+	while (gameID == 0) {
+		if (nrf_rcv_pkt_time(timeout, 2, buf) != 2)
+			return 0;
+		
+
+
+	}
+	
+}
+
+// returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+uint16_t switchToHostModeAndWaitForClients(int timeout); 
+
+// to be used by host in wait loop
+uint8_t receiveKeyPressed(int timeout); 
+
+// to be used by client in wait loop
+void sendKeyPressed(uint8_t keyPressed, int timeout); 
+
+// to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
+void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops);
+
+// to be used by host when game display must be sent (display must be uint8_t[52])
+void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops); 
+
+uint8_t getBits(uint8_t mask, uint8_t bit, len);
 
 void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color) {
 	for (i=x; i<=x2; i++)
