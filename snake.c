@@ -84,11 +84,11 @@ int game (void) {
 
 int8_t getHalfNibble (int8_t *data, int index) {
 	int8_t ret = data[index/4];
-	return (ret >> (index % 4)) & 3;
+	return (ret >> (2*(index % 4))) & 3;
 }
 
 void setHalfNibble (int8_t *data, int index, int8_t value) {
-	data[index/4] = ( data[index/4] & ~(3<<(index%4)) ) | (value&3)<<(index%4);
+	data[index/4] = ( data[index/4] & ~(3<<(2*(index%4))) ) | ((value&3)<<(2*(index%4)));
 }
 
 void shiftPoint (point *p, int8_t direction) {
