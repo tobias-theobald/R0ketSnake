@@ -44,13 +44,13 @@ void initSnake (void);
 void initSnake2 (void);
 size_t getLength (vringpbuf* who);
 
-uint16_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
-uint16_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
-uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
-void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
-void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops); // to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
-void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops); // to be used by host when game display must be sent (display must be uint8_t[52])
-uint8_t getBits(uint8_t mask, uint8_t bit, len); // internal
+uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+uint8_t receiveKeyPressed(int timeout, uint8_t gameID); // to be used by host in wait loop
+void sendKeyPressed(uint8_t keyPressed, int timeout, uint8_t gameID); // to be used by client in wait loop
+void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops, uint8_t gameID); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
+void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops, uint8_t gameID); // to be used by host when game display must be sent (display must be uint8_t[52])
+uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -176,45 +176,73 @@ void multiPlayer(void) {
 
 }
 
-// returns 0 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
-uint16_t initRadioAndLookForGames(int timeout) {
+// returns 0 if timeout (no host found), gameID (bit 0-5) else
+uint8_t initRadioAndLookForGames(int timeout) {
 
-    	struct NRF_CFG config;
-	config.nrmacs=1;
-	config.maclen[0] = 16;
-	config.channel = 81;
-	memcpy(config.mac0, "\x04\x08\x02\x06\x00", 5);
-	nrf_config_set(&config);
+    	struct NRF_CFG configListen;
+	configListen.nrmacs=1;
+	configListen.maclen[0] = 16;
+	configListen.channel = 81;
+	configListen.mac0 = "\x04\x08\x02\x06\x00";
+	configListen.txmac = "\x04\x08\x02\x06\x00";
+	nrf_config_set(&configListen);
 
-	uint8_t buf[2];
+	// Message format: 1 Byte
+	// 00 01 02 03 04 05 06 07
+	// 00-05: gameID; 06-07: Not used here
+	uint8_t buf;
 	uint8_t gameID = 0;
-	
-	while (gameID == 0) {
-		if (nrf_rcv_pkt_time(timeout, 2, buf) != 2)
-			return 0;
+
+	if (nrf_rcv_pkt_time(timeout, 1, &buf) != 1) // wrong package length or nothing received
+		return 0;
 		
-
-
-	}
+	// At this point, we know there is an open game. Let's join it.
+    	struct NRF_CFG configIngame;
+	configIngame.nrmacs=1;
+	configIngame.maclen[0] = 16;
+	configIngame.channel = 81;
+	configIngame.mac0 = "\x04\x08\x02\x06\x00";
+	configIngame.txmac = "\x04\x08\x02\x06\x00";
+	nrf_config_set(&configIngame);
+	
+	return (buf[0] << 8) | buf[1]; 
 	
 }
 
-// returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
-uint16_t switchToHostModeAndWaitForClients(int timeout); 
+// returns 0 if timeout, gameID (bit 2-5) and joystick init pos (bit 6-7) else
+uint8_t switchToHostModeAndWaitForClients(int timeout) {
+	
+	// Message format: 1 Byte
+	// 00 01 02 03 04 05 06 07
+	// 00: Host 0, Client 1; 01: Lobby 0, Ingame 1; 02-05: gameID; 06-07: Initial joystick position
+	uint8_t buf;
+	
+	if (nrf_rcv_pkt_time(timeout, 1, &buf) != 1) // wrong package length or nothing received
+		return 0;
+	if (getBits(buf, 0, 2) != 0) // already ingame or not from a host (not really timeout compliant, i no)
+		continue;
+		
+		// At this point, we know there is an open game. 
+		return (buf[0] << 8) | buf[1]; 
+	}
+
+}
 
 // to be used by host in wait loop
-uint8_t receiveKeyPressed(int timeout); 
+uint8_t receiveKeyPressed(int timeout, uint8_t gameID); 
 
 // to be used by client in wait loop
-void sendKeyPressed(uint8_t keyPressed, int timeout); 
+void sendKeyPressed(uint8_t keyPressed, int timeout, uint8_t gameID); 
 
 // to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
-void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops);
+void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout, int loops, uint8_t gameID);
 
 // to be used by host when game display must be sent (display must be uint8_t[52])
-void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops); 
+void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout, int loops, uint8_t gameID); 
 
-uint8_t getBits(uint8_t mask, uint8_t bit, len);
+uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len) {
+	return (mask << bit) >> (8-len);
+}
 
 void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color) {
 	for (i=x; i<=x2; i++)
