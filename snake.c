@@ -35,6 +35,9 @@ int8_t getHalfNibble (int8_t *data, int index);
 void setHalfNibble (int8_t *data, int index, int8_t value);
 void shiftBuf (vringpbuf *buf, int8_t nextDir);
 void growBuf (vringpbuf *buf, int8_t nextDir);
+void shiftPoint (point *p, int8_t direction);
+
+void initSnake ();
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -51,8 +54,6 @@ point bacon;
 int8_t direction;
 
 int8_t i,j ;
-
-void initSnake ();
 
 void ram (void) {
 	int key = getInputRaw();
