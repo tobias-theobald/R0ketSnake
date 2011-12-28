@@ -43,6 +43,7 @@ void initSnake ();
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
 void setGamePixel (int8_t x, int8_t y, bool color);
 void drawFood (int8_t x, int8_t y);
+bool getGamePixel (int8_t x, int8_t y);
 
 vringpbuf snake;
 point bacon;
@@ -187,6 +188,10 @@ void setGamePixel (int8_t x, int8_t y, bool color) {
 		for (i=0; i<BLOCK_SIZE*BLOCK_SIZE; i++)
 			fullBlock[i] = 1;
 	drawPixelBlock (x,y,fullBlock);
+}
+
+bool getGamePixel (int8_t x, int8_t y) {
+	return lcdGetPixel (x*BLOCK_SIZE, y*BLOCK_SIZE);
 }
 
 void drawFood (int8_t x, int8_t y) {
