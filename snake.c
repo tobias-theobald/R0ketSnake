@@ -13,6 +13,7 @@
 #define GAME_WIDTH ( SCREEN_WIDTH / BLOCK_SIZE )
 #define GAME_HEIGHT ( SCREEN_HEIGHT / BLOCK_SIZE )
 #define GAME_SIZE ( GAME_WIDTH * GAME_HEIGHT )
+#define NIBBLECOUNT ( GAME_SIZE / 4 )
 
 #define INITIAL_LENGTH 4
 
@@ -24,12 +25,14 @@ typedef struct {
 typedef struct {
 	point startpoint;
 	size_t starthn; // index of the half nibble (2 bits) where we start
-	int8_t length;
-	int8_t[GAME_SIZE / 4] data; // TODO: optimize to a power of 2
+	int8_t endhn;
+	int8_t[NIBBLECOUNT] data; // TODO: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
-int8_t shiftBuf (vringpbuf *buf, int8_t nextDir);
-int8_t growBuf (vringpbuf *buf, int8_t nextDir);
+int8_t getHalfNibble (int8_t *data, int index);
+void setHalfNibble (int8_t *data, int index, int8_t value);
+void shiftBuf (vringpbuf *buf, int8_t nextDir);
+void growBuf (vringpbuf *buf, int8_t nextDir);
 
 
 vringpbuf snake;
@@ -47,7 +50,6 @@ void game (void) {
 	lcdClear();
 	initSnake ();
 	while (1) {
-		
 		int key = getInputRaw();
 		switch (key) {
 			case BTN_ENTER:
@@ -82,18 +84,46 @@ int8_t getHalfNibble (int8_t *data, int index) {
 }
 
 void setHalfNibble (int8_t *data, int index, int8_t value) {
-	//TODO
+	data[index/4] = ( data[index/4] & ~(3<<(index%4)) ) | (value&3)<<(index%4);
 }
 
-int8_t shiftBuf (vringpbuf *buf, int8_t nextDir) {
-	//TODO
+void shiftPoint (point *p, int8_t direction) {
+	switch (direction) {
+		case DIRECTION_RIGHT:
+			p->x = (p->x + 1) % GAME_WIDTH;
+		break;
+		case DIRECTION_UP:
+			p->y = (p->y - 1 + GAME_HEIGHT) % GAME_HEIGHT;
+		break;
+		case DIRECTION_LEFT:
+			p->x = (p->x - 1 + GAME_WIDTH) % GAME_WIDTH;
+		break;
+		case DIRECTION_DOWN:
+			p->y = (p->y + 1) % GAME_HEIGHT;
+		break;
+		default:
+			// ERROR! but what should I do about it?
+	}
 }
 
-int8_t growBuf (vringpbuf *buf, int8_t nextDir) {
-	//TODO
+void shiftBuf (vringpbuf *buf, int8_t nextDir) {
+	shiftPoint (&(buf->startpoint), getHalfNibble (buf->data, buf->starthn));
+	buf->starthn = (buf->starthn + 1) % GAME_SIZE;
+	growBuf (buf, nextDir);
+}
+
+void growBuf (vringpbuf *buf, int8_t nextDir) {
+	buf->endhn = (buf->endhn + 1) % GAME_SIZE;
+	setHalfNibble(buf->data, buf->endhn, nextDir);
 }
 
 void initSnake (void) {
-	//TODO
+	snake.startpoint.x = 0;
+	snake.startpoint.y = 0;
+	snake.starthn = 0;
+	snake.endhn = 2;
+	for (i=0; i<=2; i++) {
+		setHalfNibble(snake.data, i, DIRECTION_RIGHT);
+	}
 }
 
