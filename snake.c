@@ -27,7 +27,7 @@ typedef struct {
 	point endpoint;
 	size_t starthn; // index of the half nibble (2 bits) where we start
 	int8_t endhn;
-	int8_t[NIBBLECOUNT] data; // TODO: optimize to a power of 2
+	int8_t data[NIBBLECOUNT]; // TODO: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
 int8_t getHalfNibble (int8_t *data, int index);
@@ -106,6 +106,7 @@ void shiftPoint (point *p, int8_t direction) {
 			p->y = (p->y + 1) % GAME_HEIGHT;
 		break;
 		default:
+			while (1);
 			// ERROR! but what should I do about it?
 	}
 }
