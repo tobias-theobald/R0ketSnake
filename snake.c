@@ -26,7 +26,7 @@ typedef struct {
 	point startpoint;
 	point endpoint;
 	size_t starthn; // index of the half nibble (2 bits) where we start
-	int8_t endhn;
+	size_t endhn;
 	int8_t data[NIBBLECOUNT]; // TODO: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
@@ -130,6 +130,7 @@ void initSnake (void) {
 	snake.endpoint.y = 0;
 	snake.starthn = 0;
 	snake.endhn = 2;
+	direction = DIRECTION_RIGHT;
 	for (i=0; i<=2; i++) {
 		setHalfNibble(snake.data, i, DIRECTION_RIGHT);
 	}
