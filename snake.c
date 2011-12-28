@@ -153,7 +153,7 @@ void singlePlayer (void) {
 	lcdNl();
 	lcdPrintln("Press any key");
 	lcdPrintln("to continue.");
-	lcdRefresh();	
+	lcdRefresh();
 	delayms(500);
 	while(getInputRaw() == BTN_NONE)
 		delayms(25);
