@@ -98,7 +98,7 @@ void ram (void) {
 }
 
 void singlePlayer (void) {
-	int key = getInputRaw(), button;
+	uint8_t key = BTN_RIGHT, button;
 	lcdClear();
 	initSnake ();
 	while (1) {	
@@ -198,7 +198,122 @@ void multiPlayer(void) {
 }
 
 void host (void) {
+	uint8_t key = BTN_RIGHT, button;
+	uint8_t p2key = BTN_LEFT;
+	lcdClear();
+	initSnake ();
+	initSnake2 ();
+	uint8_t dsp [GAME_SIZE/8];
+	for (i=0; i<GAME_SIZE/8; i++)
+		dsp[i] = 0;
+	while (1) {
+		sendMove (dsp, bacon.x, bacon.y, 0);
+		switch (p2key) {
+			case BTN_ENTER:
+				// exit
+				return;
+			case BTN_RIGHT:
+				if (direction2 != DIRECTION_LEFT)
+					direction2 = DIRECTION_RIGHT;
+			break;
+			case BTN_UP:
+				if (direction2 != DIRECTION_DOWN)
+					direction2 = DIRECTION_UP;
+			break;
+			case BTN_LEFT:
+				if (direction2 != DIRECTION_RIGHT)
+					direction2 = DIRECTION_LEFT;
+			break;
+			case BTN_DOWN:
+				if (direction2 != DIRECTION_UP)
+					direction2 = DIRECTION_DOWN;
+			break;
+				//Default: No keystroke received. Assuming last keystroke.
+		}
+		point newendpoint = snake2.endpoint;
+		shiftPoint (&newendpoint, direction2);
+		bool resetBacon = false;
+		if (newendpoint.x == bacon.x && newendpoint.y == bacon.y) {
+			growBuf (&snake2, direction2);
+			resetBacon = true;
+		} else {
+			setGamePixel(snake2.startpoint.x, snake2.startpoint.y, 0);
+			shiftBuf (&snake2, direction2);
+		}
+		if (getGamePixel(snake2.endpoint.x, snake2.endpoint.y))
+			break;
+		setGamePixel(snake2.endpoint.x, snake2.endpoint.y, 1);
+		
+		switch (key) {
+			case BTN_ENTER:
+				// exit
+				return;
+			case BTN_RIGHT:
+				if (direction != DIRECTION_LEFT)
+					direction = DIRECTION_RIGHT;
+			break;
+			case BTN_UP:
+				if (direction != DIRECTION_DOWN)
+					direction = DIRECTION_UP;
+			break;
+			case BTN_LEFT:
+				if (direction != DIRECTION_RIGHT)
+					direction = DIRECTION_LEFT;
+			break;
+			case BTN_DOWN:
+				if (direction != DIRECTION_UP)
+					direction = DIRECTION_DOWN;
+			break;
+				//Default: No keystroke received. Assuming last keystroke.
+		}
+		newendpoint = snake.endpoint;
+		shiftPoint (&newendpoint, direction);
+		bool resetBacon = false;
+		if (newendpoint.x == bacon.x && newendpoint.y == bacon.y) {
+			growBuf (&snake, direction);
+			resetBacon = true;
+		} else {
+			setGamePixel(snake.startpoint.x, snake.startpoint.y, 0);
+			shiftBuf (&snake, direction);
+		}
+
+		if (getGamePixel(snake.endpoint.x, snake.endpoint.y))
+			break;
+		setGamePixel(snake.endpoint.x, snake.endpoint.y, 1);
+
+		while (resetBacon) {
+			bacon.x = getRandom() % GAME_WIDTH;
+			bacon.y = getRandom() % GAME_HEIGHT;
+			if (!getGamePixel(bacon.x, bacon.y))
+				resetBacon = false;
+		}
+		
+		drawFood (bacon.x, bacon.y);
+		lcdRefresh();
+		key = BTN_NONE;
+		p2key = BTN_NONE;
+		
+		for (i=0; i < ( TIME_PER_MOVE / 50 ); ++i) {
+			p2key=receiveKeyPressed(50);
+			if ((button = getInputRaw()) != BTN_NONE)
+				key = button;
+		}
+
+	}
 	
+	// Game ended, show results
+	lcdClear();
+	lcdNl();
+	lcdPrintln("Game Over");
+	lcdPrintln("Your score:");
+	lcdPrintInt(getLength(&snake) - INITIAL_LENGTH + 1);
+	lcdNl();
+	lcdPrintln("Press any key");
+	lcdPrintln("to continue.");
+	lcdRefresh();
+	delayms(500);
+	while(getInputRaw() == BTN_NONE)
+		delayms(25);
 }
 
 bool getIthBit (uint8_t byte, size_t i) {
