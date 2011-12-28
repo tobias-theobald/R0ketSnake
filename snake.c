@@ -45,7 +45,7 @@ int8_t direction;
 
 int8_t i;
 
-void initSnake (vringpbuf *);
+void initSnake ();
 
 void game (void) {
 	lcdClear();
