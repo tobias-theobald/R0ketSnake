@@ -222,10 +222,10 @@ void drawFood (int8_t x, int8_t y) {
 #if BLOCK_SIZE == 4
 	//upper left pixel must be 0!!
 	bool food [] = {
-		0, 0, 0, 1,
-		0, 1, 1, 1,
-		1, 1, 1, 0,
-		1, 0, 0, 0
+		0, 1, 1, 0,
+		1, 0, 0, 1,
+		1, 0, 0, 1,
+		0, 1, 1, 0
 	};
 	drawPixelBlock (x,y,food);
 #else
