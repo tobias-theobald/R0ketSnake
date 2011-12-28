@@ -91,10 +91,10 @@ void ram (void) {
 			growBuf (&snake, direction);
 			resetBacon = true;
 		} else {
-			lcdSetPixel(snake.startpoint.x, snake.startpoint.y, 0);
+			setGamePixel(snake.startpoint.x, snake.startpoint.y, 0);
 			shiftBuf (&snake, direction);
 		}
-		lcdSetPixel(snake.endpoint.x, snake.endpoint.y, 1);
+		setGamePixel(snake.endpoint.x, snake.endpoint.y, 1);
 
 		while (resetBacon) {
 			bacon.x = getRandom() % GAME_WIDTH;
