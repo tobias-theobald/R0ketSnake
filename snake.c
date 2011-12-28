@@ -31,6 +31,9 @@ typedef struct {
 	int8_t data[NIBBLECOUNT]; // TODO: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
+void singlePlayer (void);
+void multiPlayer (void);
+
 int8_t getHalfNibble (int8_t *data, int index);
 void setHalfNibble (int8_t *data, int index, int8_t value);
 void shiftBuf (vringpbuf *buf, int8_t nextDir);
@@ -58,6 +61,28 @@ int8_t direction;
 int8_t i,j ;
 
 void ram (void) {
+	int key = BTN_NONE;
+	while (key != BTN_ENTER) {
+		if (key == BTN_UP)
+			singlePlayer();
+		if (key == BTN_DOWN)
+			multiPlayer();
+		
+		key = BTN_NONE;
+		lcdClear();
+		lcdPrintln("R0ketSnake");
+		lcdNl();
+		lcdPrintln("  UP 1 Player");
+		lcdPrintln("DOWN 2 Players");
+		lcdPrintln("ENTER Quit");
+		lcdRefresh();
+
+		while((key = getInputRaw()) == BTN_NONE)
+			delayms(25);
+	}
+}
+
+void singlePlayer (void) {
 	int key = getInputRaw(), button;
 	lcdClear();
 	initSnake ();
@@ -125,10 +150,17 @@ void ram (void) {
 	lcdPrintln("Game Over");
 	lcdPrintln("Your score:");
 	lcdPrintInt(getLength(&snake) - INITIAL_LENGTH + 1);
+	lcdNl();
+	lcdPrintln("Press any key");
+	lcdPrintln("to continue.");
 	lcdRefresh();	
 	delayms(500);
 	while(getInputRaw() == BTN_NONE)
 		delayms(25);
+
+}
+
+void multiPlayer(void) {
 
 }
 
