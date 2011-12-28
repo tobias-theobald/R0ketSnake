@@ -95,6 +95,7 @@ void ram (void) {
 			setGamePixel(snake.startpoint.x, snake.startpoint.y, 0);
 			shiftBuf (&snake, direction);
 		}
+
 		if (getGamePixel(snake.endpoint.x, snake.endpoint.y))
 			break;
 		setGamePixel(snake.endpoint.x, snake.endpoint.y, 1);
@@ -123,7 +124,7 @@ void ram (void) {
 	lcdNl();
 	lcdPrintln("Game Over");
 	lcdPrintln("Your score:");
-	lcdPrintInt(getLength(&snake));
+	lcdPrintInt(getLength(&snake) - INITIAL_LENGTH);
 	lcdRefresh();	
 	delayms(500);
 	while(getInputRaw() == BTN_NONE)
