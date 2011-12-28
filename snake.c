@@ -124,7 +124,7 @@ void ram (void) {
 	lcdNl();
 	lcdPrintln("Game Over");
 	lcdPrintln("Your score:");
-	lcdPrintInt(getLength(&snake) - INITIAL_LENGTH);
+	lcdPrintInt(getLength(&snake) - INITIAL_LENGTH + 1);
 	lcdRefresh();	
 	delayms(500);
 	while(getInputRaw() == BTN_NONE)
@@ -220,11 +220,12 @@ bool getGamePixel (int8_t x, int8_t y) {
 
 void drawFood (int8_t x, int8_t y) {
 #if BLOCK_SIZE == 4
+	//upper left pixel must be 0!!
 	bool food [] = {
-		0, 1, 1, 0,
-		1, 0, 0, 1,
-		1, 0, 0, 1,
-		0, 1, 1, 0
+		0, 0, 0, 1,
+		0, 1, 1, 1,
+		1, 1, 1, 0,
+		1, 0, 0, 0
 	};
 	drawPixelBlock (x,y,food);
 #else
