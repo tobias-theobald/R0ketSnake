@@ -44,6 +44,7 @@ void shiftPoint (point *p, int8_t direction);
 void initSnake (void);
 void initSnake2 (void);
 size_t getLength (vringpbuf* who);
+void client (void);
 
 uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
@@ -334,22 +335,22 @@ void sendKeyPressed(uint8_t keyPressed, int timeout) {
 
 // to be used by client when game must be received (display must be uint8_t[52], bacony and y uint8_t)
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout) {
-	uint8_t buf[54];
-	if (nrf_rcv_pkt_time(timeout, 54, buf) != 54)
+	uint8_t buf[53];
+	if (nrf_rcv_pkt_time(timeout, 53, buf) != 53)
 		return;
 	delayms(timeout);
-	memcpy(display, buf, 52);
-	*baconx = buf[52];
-	*bacony = buf[53];
+	memcpy(display, buf, 51);
+	*baconx = buf[51];
+	*bacony = buf[52];
 }
 
 // to be used by host when game display must be sent (display must be uint8_t[52])
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout) {
-	uint8_t buf[54];
-	memcpy(buf, display, 52);
-	buf[52] = baconx;
-	buf[53] = bacony;
-	nrf_snd_pkt_crc(54, buf);
+	uint8_t buf[53];
+	memcpy(buf, display, 51);
+	buf[51] = baconx;
+	buf[52] = bacony;
+	nrf_snd_pkt_crc(53, buf);
 	delayms(timeout);
 }
 
