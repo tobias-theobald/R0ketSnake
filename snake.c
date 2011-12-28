@@ -7,7 +7,7 @@
 #include "usetable.h"
 
 #define SCREEN_WIDTH  96
-#define SCREEN_HEIGHT 67
+#define SCREEN_HEIGHT 68
 #define SCREEN_SIZE ( SCREEN_WIDTH * SCREEN_HEIGHT )
 #define BLOCK_SIZE 4
 #define GAME_WIDTH ( SCREEN_WIDTH / BLOCK_SIZE )
@@ -16,7 +16,7 @@
 #define NIBBLECOUNT ( GAME_SIZE / 4 )
 
 #define INITIAL_LENGTH 4
-#define TIME_PER_MOVE 500
+#define TIME_PER_MOVE 300
 
 typedef struct {
 	int8_t x;
@@ -42,6 +42,8 @@ void shiftPoint (point *p, int8_t direction);
 
 void initSnake ();
 size_t getLength (vringpbuf* who);
+
+void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color);
 
 // drawing functions in game coordinates
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -162,6 +164,12 @@ void singlePlayer (void) {
 
 void multiPlayer(void) {
 
+}
+
+void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color) {
+	for (i=x; i<=x2; i++)
+		for (j=y; j<=y2; j++)
+			lcdSetPixel (i,j,color);
 }
 
 size_t getLength (vringpbuf* who) {
