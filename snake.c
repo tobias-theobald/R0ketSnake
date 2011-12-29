@@ -66,6 +66,7 @@ void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color);
 vringpbuf snake;
 vringpbuf snake2;
 point bacon;
+struct NRF_CFG configListen, configIngame;
 
 #define DIRECTION_RIGHT 0
 #define DIRECTION_UP 1
@@ -187,19 +188,24 @@ void multiPlayer(void) {
 	lcdPrintln(" looking for ");
 	lcdPrintln("  existing   ");
 	lcdPrintln("   games...  ");
-	if (initRadioAndLookForGames(1000)) { // game found
+	lcdRefresh();
+	if (initRadioAndLookForGames(1000000)) { // game found
 		// act as controller and screen
+		lcdClear();
+		lcdRefresh();
 		client();
 	} else { // no game found
 		lcdClear();
 		lcdPrintln("  awaiting   ");
 		lcdPrintln(" connection. ");
+		lcdRefresh();
 		if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
 			//game found
 			host();
 		} else {
 			lcdClear();
 			lcdPrintln("nobody joined");
+			lcdRefresh();
 		}
 	}
 }
@@ -275,7 +281,7 @@ void host (void) {
 		}
 		newendpoint = snake.endpoint;
 		shiftPoint (&newendpoint, direction);
-		bool resetBacon = false;
+		resetBacon = false;
 		if (newendpoint.x == bacon.x && newendpoint.y == bacon.y) {
 			growBuf (&snake, direction);
 			resetBacon = true;
@@ -372,36 +378,39 @@ void client (void) {
 // returns 0 if timeout (no host found), gameID (!= 0) else
 uint8_t initRadioAndLookForGames(int timeout) {
 
+	// Prepare radio configs in global memory	
 	uint8_t macListen[5] = {0x04, 0x08, 0x02, 0x06, 0x00};
-    	struct NRF_CFG configListen;
 	configListen.nrmacs=1;
-	configListen.maclen[0] = 16;
+	configListen.maclen[0] = 32;
 	configListen.channel = 81;
 	memcopy(configListen.mac0, macListen, 5);
 	memcopy(configListen.txmac, macListen, 5);
+
+	configIngame.nrmacs=1;
+	configIngame.maclen[0] = 32;
+	configIngame.channel = 81;
+	memcopy(configIngame.mac0, macListen, 5);
+	memcopy(configIngame.txmac, macListen, 5);
+
 	nrf_config_set(&configListen);
 
 	// Broadcast Message format: 1 Byte
 	// 00 01 02 03 04 05 06 07
 	// 00-07: gameID
 	uint8_t gameID;
-
+	lcdPrintln("Wating...");
+	lcdRefresh();
 	if (nrf_rcv_pkt_time(timeout, 1, &gameID) != 1) // wrong package length or nothing received
 		return 0;
-		
+	lcdPrintln("Found one!");
 	// At this point, we know there is an open game. Let's join it.
 	
-	uint8_t macIngame[5] = {0x04, 0x08, 0x02, 0x06, gameID};
-    	struct NRF_CFG configIngame;
-	configIngame.nrmacs=1;
-	configIngame.maclen[0] = 16;
-	configIngame.channel = 81;
-	memcopy(configIngame.mac0, macIngame, 5);
-	memcopy(configIngame.txmac, macIngame, 5);
+	configIngame.mac0[4] = gameID;
+	configIngame.txmac[4] = gameID;
 	nrf_config_set(&configIngame);
 	
 	uint8_t init = BTN_NONE;
-	delayms(4);	
+	delayms(20);	
 	nrf_snd_pkt_crc(1, &init);
 	
 	return gameID; 
@@ -415,30 +424,20 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 	// 00-07: gameID
 	uint8_t gameID = 0, buf;
 
-	for (i = 0; i < timeout / 16; ++i) {	
+	for (i = 0; i < timeout / 64; ++i) {
 		while (!gameID)
-			gameID = getRandom();
+			gameID = getRandom() & 0xffff;
 
-		uint8_t macListen[5] = {0x04, 0x08, 0x02, 0x06, 0x00};
-    		struct NRF_CFG configListen;
-		configListen.nrmacs=1;
-		configListen.maclen[0] = 16;
-		configListen.channel = 81;
-		memcopy(configListen.mac0, macListen, 5);
-		memcopy(configListen.txmac, macListen, 5);
+		lcdPrintInt(gameID);
+		lcdNl();
+		lcdRefresh();
 		nrf_config_set(&configListen);
 		nrf_snd_pkt_crc(1, &gameID);
 		
-		uint8_t macIngame[5] = {0x04, 0x08, 0x02, 0x06, gameID};
-	    	struct NRF_CFG configIngame;
-		configIngame.nrmacs=1;
-		configIngame.maclen[0] = 16;
-		configIngame.channel = 81;
-		memcopy(configIngame.mac0, macIngame, 5);
-		memcopy(configIngame.txmac, macIngame, 5);
+		configIngame.mac0[4] = gameID;
+		configIngame.txmac[4] = gameID;
 		nrf_config_set(&configIngame);
-	
-		if (nrf_rcv_pkt_time(32, 1, &buf) == 1 && buf == 0)
+		if (nrf_rcv_pkt_time(64, 1, &buf) == 1 && buf == 0)
 			return gameID;
 
 		gameID = 0;
