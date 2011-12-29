@@ -16,6 +16,11 @@
 #define GAME_SIZE ( GAME_WIDTH * GAME_HEIGHT )
 #define NIBBLECOUNT ( GAME_SIZE / 4 )
 
+#define DIRECTION_RIGHT 0
+#define DIRECTION_UP 1
+#define DIRECTION_LEFT 2
+#define DIRECTION_DOWN 3
+
 #define INITIAL_LENGTH 4
 #define TIME_PER_MOVE 300
 
@@ -32,50 +37,52 @@ typedef struct {
 	int8_t data[NIBBLECOUNT]; // not todo because fast enough: optimize to a power of 2
 } vringpbuf; // variable (but limited) size ring buffer for points
 
+// main function prototypes
+void ram (void);
+void main_snake (void);
 void singlePlayer (void);
 void multiPlayer (void);
+void client (void);
+void host (void);
 
+// helper function prototypes
 int8_t getHalfNibble (int8_t *data, int index);
 void setHalfNibble (int8_t *data, int index, int8_t value);
 void shiftBuf (vringpbuf *buf, int8_t nextDir);
 void growBuf (vringpbuf *buf, int8_t nextDir);
 void shiftPoint (point *p, int8_t direction);
-
 void initSnake (void);
 void initSnake2 (void);
 size_t getLength (vringpbuf* who);
-void client (void);
-void host (void);
+uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
+void memcopy(uint8_t * s1, const uint8_t * s2, size_t n);
 
+// radio function prototypes
 uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout); // to be used by host when game display must be sent (display must be uint8_t[52])
-uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
-void memcopy(uint8_t * s1, const uint8_t * s2, size_t n);
 
-// drawing functions in game coordinates
+// drawing game coordinates function prototypes 
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
 void setGamePixel (int8_t x, int8_t y, bool color);
 void drawFood (int8_t x, int8_t y);
 bool getGamePixel (int8_t x, int8_t y);
 void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color);
 
-vringpbuf snake;
-vringpbuf snake2;
+// global variables
+vringpbuf snake, snake2;
 point bacon;
-struct NRF_CFG configListen, configIngame;
-
-#define DIRECTION_RIGHT 0
-#define DIRECTION_UP 1
-#define DIRECTION_LEFT 2
-#define DIRECTION_DOWN 3
-int8_t direction;
-int8_t direction2;
-
-int8_t i,j ;
+int8_t direction, direction2, i, j;
+struct NRF_CFG config = {
+    .channel= 81,
+    .txmac= "\x04\x08\x0c\x10\xff",
+    .nrmacs=1,
+    .mac0=  "\x04\x08\x0c\x10\xff",
+    .maclen ="\x20",
+};
 
 void ram (void) {
 	int key = BTN_NONE;
@@ -86,6 +93,16 @@ void ram (void) {
 		} else if (key == BTN_DOWN) {
 			multiPlayer();
 			delayms(100);
+		} else if (key == BTN_RIGHT) {
+			lcdClear();
+			lcdPrintln("Waiting...");
+			lcdRefresh();
+			if (initRadioAndLookForGames(1000000))
+				lcdPrintln("Found game!");
+			else
+				lcdPrintln("Timeout");
+			lcdRefresh();
+			
 		}
 		key = BTN_NONE;
 		lcdClear();
@@ -131,7 +148,6 @@ void singlePlayer (void) {
 					direction = DIRECTION_DOWN;
 			break;
 				//Default: No keystroke received. Assuming last keystroke.
-				
 		}
 		point newendpoint = snake.endpoint;
 		shiftPoint (&newendpoint, direction);
@@ -189,7 +205,7 @@ void multiPlayer(void) {
 	lcdPrintln("  existing   ");
 	lcdPrintln("   games...  ");
 	lcdRefresh();
-	if (initRadioAndLookForGames(1000000)) { // game found
+	if (initRadioAndLookForGames(1000)) { // game found
 		// act as controller and screen
 		lcdClear();
 		lcdRefresh();
@@ -379,35 +395,25 @@ void client (void) {
 uint8_t initRadioAndLookForGames(int timeout) {
 
 	// Prepare radio configs in global memory	
-	uint8_t macListen[5] = {0x04, 0x08, 0x02, 0x06, 0x00};
-	configListen.nrmacs=1;
-	configListen.maclen[0] = 32;
-	configListen.channel = 81;
-	memcopy(configListen.mac0, macListen, 5);
-	memcopy(configListen.txmac, macListen, 5);
-
-	configIngame.nrmacs=1;
-	configIngame.maclen[0] = 32;
-	configIngame.channel = 81;
-	memcopy(configIngame.mac0, macListen, 5);
-	memcopy(configIngame.txmac, macListen, 5);
-
-	nrf_config_set(&configListen);
+	nrf_init();
+	nrf_config_set(&config);
 
 	// Broadcast Message format: 1 Byte
 	// 00 01 02 03 04 05 06 07
 	// 00-07: gameID
 	uint8_t gameID;
-	lcdPrintln("Wating...");
+	lcdPrintln("Waiting...");
 	lcdRefresh();
 	if (nrf_rcv_pkt_time(timeout, 1, &gameID) != 1) // wrong package length or nothing received
 		return 0;
-	lcdPrintln("Found one!");
+	lcdPrintln("Found game.");
+	lcdPrintln("Joining...");
+	lcdRefresh();
 	// At this point, we know there is an open game. Let's join it.
 	
-	configIngame.mac0[4] = gameID;
-	configIngame.txmac[4] = gameID;
-	nrf_config_set(&configIngame);
+	config.mac0[4] = gameID;
+	config.txmac[4] = gameID;
+	nrf_config_set(&config);
 	
 	uint8_t init = BTN_NONE;
 	delayms(20);	
@@ -431,13 +437,16 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 		lcdPrintInt(gameID);
 		lcdNl();
 		lcdRefresh();
-		nrf_config_set(&configListen);
+		
+		config.mac0[4] = 0xff;
+		config.txmac[4] = 0xff;
+		nrf_config_set(&config);
 		nrf_snd_pkt_crc(1, &gameID);
 		
-		configIngame.mac0[4] = gameID;
-		configIngame.txmac[4] = gameID;
-		nrf_config_set(&configIngame);
-		if (nrf_rcv_pkt_time(64, 1, &buf) == 1 && buf == 0)
+		config.mac0[4] = gameID;
+		config.txmac[4] = gameID;
+		nrf_config_set(&config);
+		if (nrf_rcv_pkt_time(64, 1, &buf) == 1 && buf == BTN_NONE)
 			return gameID;
 
 		gameID = 0;
