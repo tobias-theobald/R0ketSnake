@@ -66,16 +66,20 @@ uint8_t initRadioAndLookForGames(int timeout) {
 	uint8_t gameID;
 	lcdPrintln("Waiting...");
 	lcdRefresh();
-	if (nrf_rcv_pkt_time(timeout, 1, &gameID) != 1) // wrong package length or nothing received
+	uint32_t len = nrf_rcv_pkt_time(timeout, 1, &gameID);
+	lcdPrintInt(len);
+	lcdNl();
+	lcdRefresh();
+	if (len != 1) // wrong package length or nothing received
 		return 0;
 	lcdPrintln("Found game.");
 	lcdPrintln("Joining...");
 	lcdRefresh();
 	// At this point, we know there is an open game. Let's join it.
 	
-	config.mac0[4] = gameID;
-	config.txmac[4] = gameID;
-	nrf_config_set(&config);
+	//config.mac0[4] = gameID;
+	//config.txmac[4] = gameID;
+	//nrf_config_set(&config);
 	
 	uint8_t init = BTN_NONE;
 	delayms(20);	

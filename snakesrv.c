@@ -24,7 +24,6 @@ point bacon;
 int8_t direction2;
 
 void ram(void) {
-	initRadio();
 	if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
 		//someone joined
 		host();
@@ -139,13 +138,6 @@ inline void host (void) {
 		delayms(25);
 }
 
-// returns 0 if timeout (no host found), gameID (!= 0) else
-inline void initRadio() {
-
-	// Prepare radio configs in global memory
-	nrf_config_set(&config);
-}
-
 // returns 0 if timeout, gameID (!= 0) else
 uint8_t switchToHostModeAndWaitForClients(int timeout) {
 	
@@ -153,24 +145,28 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 	// 00 01 02 03 04 05 06 07
 	// 00-07: gameID
 	uint8_t gameID = 0, buf;
+	uint32_t k;
 
-	for (i = 0; i < timeout / 64; ++i) {
-		while (!gameID)
-			gameID = getRandom() & 0xff;
-
-		lcdPrintInt(gameID);
-		lcdNl();
-		lcdRefresh();
+	for (k = 0; k < timeout / 64; ++k) {
+		//while (!gameID)
+		//	gameID = getRandom() & 0xff;
+		gameID = 0xff;
 		
 		config.mac0[4] = 0xff;
 		config.txmac[4] = 0xff;
 		nrf_config_set(&config);
 		nrf_snd_pkt_crc(1, &gameID);
 		
-		config.mac0[4] = gameID;
-		config.txmac[4] = gameID;
-		nrf_config_set(&config);
-		if (nrf_rcv_pkt_time(64, 1, &buf) == 1 && buf == BTN_NONE)
+		//config.mac0[4] = gameID;
+		//config.txmac[4] = gameID;
+		//nrf_config_set(&config);
+		uint8_t len = nrf_rcv_pkt_time(64, 1, &buf);
+		
+		lcdPrintInt(len);
+		lcdNl();
+		lcdRefresh();		
+
+		if (len == 1 && buf == BTN_NONE)
 			return gameID;
 
 		gameID = 0;
