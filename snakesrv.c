@@ -24,10 +24,11 @@ point bacon;
 int8_t direction2;
 
 void ram(void) {
-	if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
+	//if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
 		//someone joined
+		nrf_config_set(&config);
 		host();
-	}
+	//}
 }
 
 inline void host (void) {
@@ -61,6 +62,11 @@ inline void host (void) {
 				if (direction2 != DIRECTION_UP)
 					direction2 = DIRECTION_DOWN;
 			break;
+			case BTN_NONE:
+				break;
+			default:
+				direction2 = (direction2 + 1) % 4;
+				break;
 				//Default: No keystroke received. Assuming last keystroke.
 		}
 		point newendpoint = snake2.endpoint;
@@ -177,6 +183,7 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 // to be used by host in wait loop
 uint8_t receiveKeyPressed(int timeout) {
 	uint8_t buf;
+	nrf_config_set(&config);
 	if (nrf_rcv_pkt_time(timeout, 1, &buf) == 1)
 		delayms(timeout);
 	return buf;

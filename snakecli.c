@@ -29,21 +29,22 @@ void ram(void) {
 	lcdPrintln("  existing   ");
 	lcdPrintln("   games...  ");
 	lcdRefresh();
-	if (initRadioAndLookForGames(2000)) { // game found
+	//if (initRadioAndLookForGames(2000)) { // game found
 		// act as controller and screen
 		lcdClear();
 		lcdRefresh();
 		client();
-	} else { // no game found
+	//} else { // no game found
 		lcdClear();
 		lcdPrintln("No game found");
 		lcdRefresh();
 		delayms(500);
-	}
+	//}
 }
 
 void client (void) {
 	uint8_t dsp [GAME_SIZE/8];
+	memset (&dsp, 0, GAME_SIZE/8);
 	uint8_t key;
 	while(1) {
 		receiveMove(dsp, &(bacon.x), &(bacon.y), TIME_PER_MOVE/16);
@@ -130,6 +131,7 @@ uint8_t receiveKeyPressed(int timeout) {
 
 // to be used by client in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout) {
+	nrf_config_set(&config);
 	nrf_snd_pkt_crc(1, &keyPressed);
 	delayms(timeout);
 }
