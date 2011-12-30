@@ -13,12 +13,13 @@ void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout); // to be used by host when game display must be sent (display must be uint8_t[52])
 
-struct NRF_CFG config = {
-    .channel= 81,
-    .txmac= "\x04\x08\x0c\x10\xff",
-    .nrmacs=1,
-    .mac0=  "\x04\x08\x0c\x10\xff",
-    .maclen ="\x20",
+struct NRF_CFG config = 
+{
+   .channel= 81,
+   .txmac= "\x1\x2\x3\x5\x5",
+   .nrmacs=1,
+   .mac0=  "\x1\x2\x3\x5\x5",
+   .maclen ="\x20",
 };
 
 vringpbuf snake2;
@@ -64,6 +65,7 @@ uint8_t initRadioAndLookForGames(int timeout) {
 
 	// Prepare radio configs in global memory
 	nrf_config_set(&config);
+	nrf_set_strength(3);
 
 	// Broadcast Message format: 1 Byte
 	// 00 01 02 03 04 05 06 07
@@ -95,8 +97,10 @@ uint8_t initRadioAndLookForGames(int timeout) {
 
 // to be used by client in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout) {
+	uint8_t buf [32];
+	buf[0]=keyPressed;
 	nrf_config_set(&config);
-	nrf_snd_pkt_crc(1, &keyPressed);
+	nrf_snd_pkt_crc(32,(uint8_t *)buf);
 	delayms(timeout);
 }
 

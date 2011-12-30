@@ -13,12 +13,13 @@ void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in
 void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int timeout); // to be used by client when game should be received (display must be uint8_t[52], baconx and y uint8_t)
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout); // to be used by host when game display must be sent (display must be uint8_t[52])
 
-struct NRF_CFG config = {
-    .channel= 81,
-    .txmac= "\x04\x08\x0c\x10\xff",
-    .nrmacs=1,
-    .mac0=  "\x04\x08\x0c\x10\xff",
-    .maclen ="\x20",
+struct NRF_CFG config = 
+{
+   .channel= 81,
+   .txmac= "\x1\x2\x3\x5\x5",
+   .nrmacs=1,
+   .mac0=  "\x1\x2\x3\x5\x5",
+   .maclen ="\x20",
 };
 
 vringpbuf snake2;
@@ -29,6 +30,7 @@ void ram(void) {
 	//if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
 		//someone joined
 		nrf_config_set(&config);
+		nrf_set_strength(3);
 		host();
 	//}
 }
@@ -44,7 +46,7 @@ inline void host (void) {
 		dsp[i] = 0;
 	while (1) {
 		sendMove (dsp, bacon.x, bacon.y, 0);
-		switch (p2key) {
+		switch (key) {
 			case BTN_ENTER:
 				// exit
 				return;
@@ -85,7 +87,7 @@ inline void host (void) {
 			break;
 		setGamePixel(snake2.endpoint.x, snake2.endpoint.y, 1);
 		
-		switch (key) {
+		switch (p2key) {
 			case BTN_ENTER:
 				// exit
 				return;
@@ -134,8 +136,8 @@ inline void host (void) {
 		key = BTN_NONE;
 		p2key = BTN_NONE;
 		
-		for (i=0; i < ( TIME_PER_MOVE / 50 ); ++i) {
-			p2key=receiveKeyPressed(50);
+		for (i=0; i < ( TIME_PER_MOVE / 100 ); ++i) {
+			p2key=receiveKeyPressed(100);
 			if ((button = getInputRaw()) != BTN_NONE)
 				key = button;
 		}
@@ -184,11 +186,11 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 
 // to be used by host in wait loop
 uint8_t receiveKeyPressed(int timeout) {
-	uint8_t buf;
+	uint8_t buf [32];
 	nrf_config_set(&config);
-	if (nrf_rcv_pkt_time(timeout, 1, &buf) == 1)
+	if (nrf_rcv_pkt_time(100,32,buf) == 32)
 		delayms(timeout);
-	return buf;
+	return buf[0];
 }
 
 // to be used by client in wait loop

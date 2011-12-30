@@ -11,6 +11,7 @@ echo "Copying snake.c to $R0KET/firmware/l0dable"
 cp snake_sp.c "$R0KET/firmware/l0dable"
 cp snakesrv.c "$R0KET/firmware/l0dable"
 cp snakecli.c "$R0KET/firmware/l0dable"
+cp snakeno.c "$R0KET/firmware/l0dable"
 cp snake_shared.c "$R0KET/firmware/l0dable"
 
 cd "$R0KET/firmware/l0dable"
@@ -27,6 +28,10 @@ echo
 echo CLIENT
 echo
 make snakecli.c0d && mv snakecli.c0d $DIRECTORY
+echo
+echo CHAT CLIENT
+echo
+make snakeno.c0d && mv snakeno.c0d $DIRECTORY
 cd $DIRECTORY
 
 echo "Finished."
