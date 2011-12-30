@@ -8,12 +8,25 @@ fi
 DIRECTORY=$PWD
 
 echo "Copying snake.c to $R0KET/firmware/l0dable"
-cp snake.c "$R0KET/firmware/l0dable"
+cp snake_sp.c "$R0KET/firmware/l0dable"
+cp snake_host.c "$R0KET/firmware/l0dable"
+cp snake_client.c "$R0KET/firmware/l0dable"
+cp snake_shared.c "$R0KET/firmware/l0dable"
 
 cd "$R0KET/firmware/l0dable"
 
 echo "Building..."
-make snake.c0d && mv snake.c0d $DIRECTORY
+echo SINGLE PLAYER
+echo
+make snake_sp.c0d && mv snake_sp.c0d $DIRECTORY
+echo
+echo HOST
+echo 
+make snake_host.c0d && mv snake_host.c0d $DIRECTORY
+echo
+echo CLIENT
+echo
+make snake_client.c0d && mv snake_client.c0d $DIRECTORY
 cd $DIRECTORY
 
 echo "Finished."

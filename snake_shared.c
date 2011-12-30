@@ -28,6 +28,14 @@ typedef struct {
 	uint8_t y;
 } point;
 
+typedef struct {
+	point startpoint;
+	point endpoint;
+	size_t starthn; // index of the half nibble (2 bits) where we start
+	size_t endhn;
+	int8_t data[NIBBLECOUNT]; // not todo because fast enough: optimize to a power of 2
+} vringpbuf; // variable (but limited) size ring buffer for points
+
 // main function prototypes
 void ram (void);
 void main_snake (void);
