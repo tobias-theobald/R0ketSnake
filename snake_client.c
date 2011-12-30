@@ -2,7 +2,6 @@
 #include "snake_shared.c"
 
 void client (void);
-void initSnake2 (void);
 
 // radio function prototypes
 uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
@@ -58,8 +57,7 @@ void client (void) {
 // returns 0 if timeout (no host found), gameID (!= 0) else
 uint8_t initRadioAndLookForGames(int timeout) {
 
-	// Prepare radio configs in global memory	
-	nrf_init();
+	// Prepare radio configs in global memory
 	nrf_config_set(&config);
 
 	// Broadcast Message format: 1 Byte
@@ -138,7 +136,7 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 	if (nrf_rcv_pkt_time(timeout, 53, buf) != 53)
 		return;
 	delayms(timeout);
-	memcopy(display, buf, 51);
+	memcpy(display, buf, 51);
 	*baconx = buf[51];
 	*bacony = buf[52];
 }
@@ -146,7 +144,7 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 // to be used by host when game display must be sent (display must be uint8_t[52])
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout) {
 	uint8_t buf[53];
-	memcopy(buf, display, 51);
+	memcpy(buf, display, 51);
 	buf[51] = baconx;
 	buf[52] = bacony;
 	nrf_snd_pkt_crc(53, buf);

@@ -46,10 +46,10 @@ void setHalfNibble (int8_t *data, int index, int8_t value);
 void shiftBuf (vringpbuf *buf, int8_t nextDir);
 void growBuf (vringpbuf *buf, int8_t nextDir);
 void shiftPoint (point *p, int8_t direction);
-void initSnake (void);
+void initSnake (vringpbuf* what, uint8_t sx, uint8_t sy, uint8_t ex, uint8_t ey, uint8_t direc);
 size_t getLength (vringpbuf* who);
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len); // internal; returns bits bit to (bit+len-1) from mask on the rightmost side 
-void memcopy(uint8_t * s1, const uint8_t * s2, size_t n);
+//void memcopy(uint8_t * s1, const uint8_t * s2, size_t n);
 
 // drawing game coordinates function prototypes 
 void drawPixelBlock (int8_t x, int8_t y, bool* img);
@@ -64,6 +64,10 @@ point bacon;
 int8_t direction, i, j;
 
 void main_snake (void) {
+	bacon.x = getRandom() % GAME_WIDTH;
+	bacon.y = getRandom() % GAME_HEIGHT;
+	direction = DIRECTION_RIGHT;
+	initSnake (&snake, GAME_WIDTH-4, 0, GAME_WIDTH-1, 0, DIRECTION_RIGHT);
 	ram();
 }
 
@@ -105,10 +109,10 @@ uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len) {
 	return (mask << bit) >> (8-len);
 }
 
-void memcopy(uint8_t * s1, const uint8_t * s2, size_t n) {
+/*void memcopy(uint8_t * s1, const uint8_t * s2, size_t n) {
 	for (i = 0; i < n; ++i)
 		*(s1+i) = *(s2+i);
-}
+}*/
 
 void fillBlock (int8_t x, int8_t y, int8_t x2, int8_t y2, bool color) {
 	for (i=x; i<=x2; i++)
@@ -166,18 +170,15 @@ void growBuf (vringpbuf *buf, int8_t nextDir) {
 	shiftPoint (&(buf->endpoint), nextDir);
 }
 
-void initSnake (void) {
-	snake.startpoint.x = GAME_WIDTH-4;
-	snake.startpoint.y = 0;
-	snake.endpoint.x = GAME_WIDTH-1;
-	snake.endpoint.y = 0;
-	snake.starthn = 0;
-	snake.endhn = 2;
-	bacon.x = getRandom() % GAME_WIDTH;
-	bacon.y = getRandom() % GAME_HEIGHT;
-	direction = DIRECTION_RIGHT;
+void initSnake (vringpbuf* snake, uint8_t sx, uint8_t sy, uint8_t ex, uint8_t ey, uint8_t direc) {
+	snake->startpoint.x = sx;//GAME_WIDTH-4;
+	snake->startpoint.y = sy;//0;
+	snake->endpoint.x = ex;//GAME_WIDTH-1;
+	snake->endpoint.y = ey;//0;
+	snake->starthn = 0;
+	snake->endhn = 2;
 	for (i=0; i<=2; i++) {
-		setHalfNibble(snake.data, i, DIRECTION_RIGHT);
+		setHalfNibble(snake->data, i, direc);
 	}
 }
 

@@ -1,11 +1,10 @@
-#include "funk/nrf24l01p.h"
+#include <funk/nrf24l01p.h>
 #include "snake_shared.c"
 
 void host (void);
-void initSnake2 (void);
 
 // radio function prototypes
-uint8_t initRadioAndLookForGames(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
+void initRadio(void);
 uint8_t switchToHostModeAndWaitForClients(int timeout); // returns -1 if timeout (no host found), gameID (bit 2-5), bacon x (6-10) and bacon y (11-15) else
 uint8_t receiveKeyPressed(int timeout); // to be used by host in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout); // to be used by client in wait loop
@@ -25,15 +24,10 @@ point bacon;
 int8_t direction2;
 
 void ram(void) {
-	initRadioAndLookForGames(0);
+	initRadio();
 	if (switchToHostModeAndWaitForClients (10000)) { // wait for 10 secs
 		//someone joined
 		host();
-	} else {
-		lcdClear();
-		lcdPrintln("nobody joined");
-		lcdRefresh();
-		delayms(500);
 	}
 }
 
@@ -41,8 +35,8 @@ inline void host (void) {
 	uint8_t key = BTN_RIGHT, button;
 	uint8_t p2key = BTN_LEFT;
 	lcdClear();
-	initSnake ();
-	initSnake2 ();
+	initSnake (&snake2, 3, GAME_HEIGHT-1, 0, GAME_HEIGHT-1, DIRECTION_LEFT);
+	direction2=DIRECTION_LEFT;
 	uint8_t dsp [GAME_SIZE/8];
 	for (i=0; i<GAME_SIZE/8; i++)
 		dsp[i] = 0;
@@ -140,63 +134,16 @@ inline void host (void) {
 		}
 
 	}
-	
-	// Game ended, show results
-	lcdClear();
-	lcdNl();
-	lcdPrintln("Game Over");
-	lcdPrintln("Your score:");
-	lcdPrintInt(getLength(&snake) - INITIAL_LENGTH + 1);
-	lcdNl();
-	lcdPrintln("Press any key");
-	lcdPrintln("to continue.");
-	lcdRefresh();
 	delayms(500);
 	while(getInputRaw() == BTN_NONE)
 		delayms(25);
 }
 
-void client (void) {
-	uint8_t dsp [GAME_SIZE/8];
-	uint8_t key;
-	while(1) {
-		receiveMove(dsp, &(bacon.x), &(bacon.y), TIME_PER_MOVE/16);
-		paintDisplay (dsp);
-		drawFood (bacon.x, bacon.y);
-		key = getInputRaw();
-		sendKeyPressed (key, TIME_PER_MOVE/16);
-	}
-}
-
 // returns 0 if timeout (no host found), gameID (!= 0) else
-uint8_t initRadioAndLookForGames(int timeout) {
+inline void initRadio() {
 
-	// Prepare radio configs in global memory	
-	nrf_init();
+	// Prepare radio configs in global memory
 	nrf_config_set(&config);
-
-	// Broadcast Message format: 1 Byte
-	// 00 01 02 03 04 05 06 07
-	// 00-07: gameID
-	uint8_t gameID;
-	lcdPrintln("Waiting...");
-	lcdRefresh();
-	if (nrf_rcv_pkt_time(timeout, 1, &gameID) != 1) // wrong package length or nothing received
-		return 0;
-	lcdPrintln("Found game.");
-	lcdPrintln("Joining...");
-	lcdRefresh();
-	// At this point, we know there is an open game. Let's join it.
-	
-	config.mac0[4] = gameID;
-	config.txmac[4] = gameID;
-	nrf_config_set(&config);
-	
-	uint8_t init = BTN_NONE;
-	delayms(20);	
-	nrf_snd_pkt_crc(1, &init);
-	
-	return gameID; 
 }
 
 // returns 0 if timeout, gameID (!= 0) else
@@ -209,7 +156,7 @@ uint8_t switchToHostModeAndWaitForClients(int timeout) {
 
 	for (i = 0; i < timeout / 64; ++i) {
 		while (!gameID)
-			gameID = getRandom() & 0xffff;
+			gameID = getRandom() & 0xff;
 
 		lcdPrintInt(gameID);
 		lcdNl();
@@ -251,7 +198,7 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 	if (nrf_rcv_pkt_time(timeout, 53, buf) != 53)
 		return;
 	delayms(timeout);
-	memcopy(display, buf, 51);
+	memcpy(display, buf, 51);
 	*baconx = buf[51];
 	*bacony = buf[52];
 }
@@ -259,22 +206,9 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 // to be used by host when game display must be sent (display must be uint8_t[52])
 void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout) {
 	uint8_t buf[53];
-	memcopy(buf, display, 51);
+	memcpy(buf, display, 51);
 	buf[51] = baconx;
 	buf[52] = bacony;
 	nrf_snd_pkt_crc(53, buf);
 	delayms(timeout);
-}
-
-void initSnake2 (void) {
-	snake2.startpoint.x = 3;
-	snake2.startpoint.y = GAME_HEIGHT-1;
-	snake2.endpoint.x = 0;
-	snake2.endpoint.y = GAME_HEIGHT-1;
-	snake2.starthn = 0;
-	snake2.endhn = 2;
-	direction = DIRECTION_LEFT;
-	for (i=0; i<=2; i++) {
-		setHalfNibble(snake.data, i, DIRECTION_LEFT);
-	}
 }

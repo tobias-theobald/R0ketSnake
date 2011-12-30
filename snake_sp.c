@@ -3,7 +3,6 @@
 void ram (void) {
 	uint8_t key = BTN_RIGHT, button;
 	lcdClear();
-	initSnake ();
 	while (1) {	
 		switch (key) {
 			case BTN_ENTER:
