@@ -1,4 +1,6 @@
-#include "funk/nrf24l01p.h"
+#include <funk/nrf24l01p.h>
+#include <funk/rftransfer.h>
+
 #include "snake_shared.c"
 
 void client (void);
@@ -52,6 +54,8 @@ void client (void) {
 		drawFood (bacon.x, bacon.y);
 		key = getInputRaw();
 		sendKeyPressed (key, TIME_PER_MOVE/16);
+		if (key == BTN_ENTER)
+			return;
 	}
 }
 
@@ -89,46 +93,6 @@ uint8_t initRadioAndLookForGames(int timeout) {
 	return gameID; 
 }
 
-// returns 0 if timeout, gameID (!= 0) else
-uint8_t switchToHostModeAndWaitForClients(int timeout) {
-	
-	// Broadcast Message format: 1 Byte
-	// 00 01 02 03 04 05 06 07
-	// 00-07: gameID
-	uint8_t gameID = 0, buf;
-
-	for (i = 0; i < timeout / 64; ++i) {
-		while (!gameID)
-			gameID = getRandom() & 0xffff;
-
-		lcdPrintInt(gameID);
-		lcdNl();
-		lcdRefresh();
-		
-		config.mac0[4] = 0xff;
-		config.txmac[4] = 0xff;
-		nrf_config_set(&config);
-		nrf_snd_pkt_crc(1, &gameID);
-		
-		config.mac0[4] = gameID;
-		config.txmac[4] = gameID;
-		nrf_config_set(&config);
-		if (nrf_rcv_pkt_time(64, 1, &buf) == 1 && buf == BTN_NONE)
-			return gameID;
-
-		gameID = 0;
-	}
-	return 0;
-}
-
-// to be used by host in wait loop
-uint8_t receiveKeyPressed(int timeout) {
-	uint8_t buf;
-	if (nrf_rcv_pkt_time(timeout, 1, &buf) == 1)
-		delayms(timeout);
-	return buf;
-}
-
 // to be used by client in wait loop
 void sendKeyPressed(uint8_t keyPressed, int timeout) {
 	nrf_config_set(&config);
@@ -145,16 +109,6 @@ void receiveMove(uint8_t * display, uint8_t * baconx, uint8_t * bacony, int time
 	memcpy(display, buf, 51);
 	*baconx = buf[51];
 	*bacony = buf[52];
-}
-
-// to be used by host when game display must be sent (display must be uint8_t[52])
-void sendMove(uint8_t * display, uint8_t baconx, uint8_t bacony, int timeout) {
-	uint8_t buf[53];
-	memcpy(buf, display, 51);
-	buf[51] = baconx;
-	buf[52] = bacony;
-	nrf_snd_pkt_crc(53, buf);
-	delayms(timeout);
 }
 
 void initSnake2 (void) {

@@ -1,4 +1,10 @@
+#include <sysinit.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+
 #include "basic/basic.h"
+#include "basic/config.h"
 #include "basic/random.h"
 #include "lcd/render.h"
 #include "lcd/print.h"
@@ -103,6 +109,7 @@ void paintDisplay (uint8_t *dsp) {
 			setGamePixel (j, i, getPixelOnDsp(dsp,j,i));
 		}
 	}
+	lcdRefresh();
 }
 
 uint8_t getBits(uint8_t mask, uint8_t bit, uint8_t len) {

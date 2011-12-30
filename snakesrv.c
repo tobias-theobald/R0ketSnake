@@ -1,4 +1,6 @@
 #include <funk/nrf24l01p.h>
+#include <funk/rftransfer.h>
+
 #include "snake_shared.c"
 
 void host (void);
